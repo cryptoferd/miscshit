@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Price SVG</title>
+    <style>
+        svg {
+            width: 500px;
+            height: 300px;
+            display: block;
+            margin: 50px auto;
+        }
+        text {
+            font-size: 48px;
+            fill: white;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+    </style>
+</head>
+<body>
+
+    <svg id="price-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 300">
+        <rect id="background" width="100%" height="100%" fill="green"></rect>
+        <text x="50%" y="50%" id="price-text">$0.00</text>
+    </svg>
+
+    <script>
+        async function fetchPrice() {
+            const response = await fetch('https://mempool.space/api/v1/prices');
+            const data = await response.json();
+            const usdPrice = data.USD;
+            return usdPrice;
+        }
+
+        function formatUSD(value) {
+            return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+        }
+
+        function updateBackgroundColor(price) {
+            const minPrice = 0;
+            const maxPrice = 100000;
+            const percentage = Math.min((price - minPrice) / (maxPrice - minPrice), 1);
+            const red = Math.round(percentage * 255);
+            const green = Math.round((1 - percentage) * 255);
+            return `rgb(${red},${green},0)`;
+        }
+
+        async function updateSVG() {
+            const usdPrice = await fetchPrice();
+            const formattedPrice = formatUSD(usdPrice);
+
+            const priceText = document.getElementById('price-text');
+            const background = document.getElementById('background');
+
+            priceText.textContent = formattedPrice;
+            background.setAttribute('fill', updateBackgroundColor(usdPrice));
+        }
+
+        // Initial load
+        updateSVG();
+
+        // Update every 5 minutes
+        setInterval(updateSVG, 1 * 60 * 1000);
+    </script>
+
+</body>
+</html>
